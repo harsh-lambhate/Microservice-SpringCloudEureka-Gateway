@@ -1,25 +1,29 @@
 package com.lcwd.user.service.services.impl;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
 import com.lcwd.user.service.entities.Hotel;
 import com.lcwd.user.service.entities.Rating;
 import com.lcwd.user.service.entities.User;
+import com.lcwd.user.service.exceptions.EmptyResultDataAccessException;
 import com.lcwd.user.service.exceptions.ResourceNotFoundException;
 import com.lcwd.user.service.external.services.HotelService;
-//import com.lcwd.user.service.external.services.HotelService;
+import com.lcwd.user.service.external.services.RatingService;
 import com.lcwd.user.service.repositories.UserRepository;
 import com.lcwd.user.service.services.UserService;
+
+import feign.FeignException;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -27,14 +31,20 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private RestTemplate restTemplate;
+//    @Autowired
+//    private RestTemplate restTemplate;
 
     @Autowired
     private HotelService hotelService;
+    
+    @Autowired
+    private RatingService ratingService;
 
     private Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
+    /**
+     * This method is used to save userId which is created by Random Number UUID 
+     */
     @Override
     public User saveUser(User user) {
         //generate  unique userid
@@ -42,51 +52,156 @@ public class UserServiceImpl implements UserService {
         user.setUserId(randomUserId);
         return userRepository.save(user);
     }
-
+    
+    /**
+     * This method is used to get all user
+     * @return list of all user
+     */
     @Override
-    public List<User> getAllUser() {
-        //implement RATING SERVICE CALL: USING REST TEMPLATE
-        return userRepository.findAll();
+    public Page<User> getAllUser(Pageable pageable) {
+        //List<User> users = 
+        Page<User> users = userRepository.findAll(pageable);
+        ResponseEntity<List<Rating>> ratingsResponse = ratingService.getRatings();
+        ResponseEntity<List<Hotel>> hotelsResponse = hotelService.getAllHotel();
+
+        // Process ratings
+        if (ratingsResponse != null && ratingsResponse.getBody() != null) {
+            Map<String, List<Rating>> userRatingsMap = ratingsResponse.getBody().stream()
+                    .collect(Collectors.groupingBy(Rating::getUserId));
+            users.forEach(user -> user.setRatings(userRatingsMap.get(user.getUserId())));
+        }
+
+        // Process hotels
+        if (hotelsResponse != null && hotelsResponse.getBody() != null) {
+            Map<String, Hotel> hotelMap = hotelsResponse.getBody().stream()
+                    .collect(Collectors.toMap(Hotel::getId, Function.identity()));
+            users.forEach(user -> {
+                if (user.getRatings() != null) {
+                    user.getRatings().forEach(rating -> rating.setHotel(hotelMap.get(rating.getHotelId())));
+                }
+            });
+        }
+
+
+        return users;
     }
 
-    //get single user
-    @Override
-    public User getUser(String userId) {
-        //get user from database with the help  of user repository
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with given id is not found on server !! : " + userId));
-        // fetch rating of the above  user from RATING SERVICE
-        //http://localhost:8083/ratings/users/47e38dac-c7d0-4c40-8582-11d15f185fad
-        //Rating[] ratingsOfUser = restTemplate.getForObject("http://localhost:8082/ratings/users/" + user.getUserId(), Rating[].class);
-        Rating[] ratingsOfUser = restTemplate.getForObject("http://RATING-SERVICE/ratings/users/" + user.getUserId(), Rating[].class);
-        
-        
-        logger.info("{} ", ratingsOfUser);
-        //List<Rating> ratings = Arrays.stream(ratingsOfUser).toList();
-        List<Rating> ratings = Arrays.stream(ratingsOfUser).toList();
-        
-        List<Rating> ratingList = ratings.stream().map(rating -> {
-            //api call to hotel service to get the hotel
-        	
-            //http://localhost:8082/hotels/1cbaf36d-0b28-4173-b5ea-f1cb0bc0a791
-        	
-        	
-        	//ResponseEntity<Hotel> forEntity = restTemplate.getForEntity("http://HOTEL-SERVICE/hotels/"+rating.getHotelId(), Hotel.class);
-        	//ResponseEntity<Hotel> forEntity = restTemplate.getForEntity("http://localhost:8080/hotels/"+rating.getHotelId(), Hotel.class);
-            
-        	
-        	Hotel hotel = hotelService.getHotel(rating.getHotelId());
-            //logger.info("response status code: {} ",forEntity.getStatusCode());
-        	//rating.setHotel(forEntity.getBody());
-        	
-            //set the hotel to rating
-            rating.setHotel(hotel);
-           
-            //return the rating
-            return rating;
-        }).collect(Collectors.toList());
+	
+    /**
+     * This method is used to get single user by userId
+     * @param String userId
+     * @return user
+     */
+	@Override
+	public User getUser(String userId) {
+		// get user from database with the help of user repository
+		User user = userRepository.findById(userId).orElseThrow(
+				() -> new ResourceNotFoundException("User with given id is not found on server !! : " + userId));
 
-        user.setRatings(ratingList);
+		// fetch rating of the above user from RATING SERVICE
 
-        return user;
+		// Rating[] ratingsOfUser =
+		// restTemplate.getForObject("http://RATING-SERVICE/ratings/users/"+user.getUserId(), Rating[].class);
+		// List<Rating> ratings = Arrays.stream(ratingsOfUser).toList();
+
+		List<Rating> ratings = ratingService.getRatings().getBody();
+		List<Rating> ratingList = ratings.stream().map(rating -> {
+			// api call to hotel service to get the hotel
+			Hotel hotel = hotelService.getHotel(rating.getHotelId()).getBody();
+			// set the hotel to rating
+			rating.setHotel(hotel);
+
+			// return the rating
+			return rating;
+		}).collect(Collectors.toList());
+
+		user.setRatings(ratingList);
+
+		return user;
+	}
+   
+    /**
+     * This method is used to delete user by userId
+     * @param String userId
+     */
+	@Override
+	public void deleteUserByUserId(String userId) {
+		
+		 boolean allServicesAvailable = Optional.ofNullable(userRepository).isPresent()
+		            && Optional.ofNullable(hotelService).isPresent() &&
+		            	Optional.ofNullable(hotelService).isPresent();
+		 if(allServicesAvailable) {
+			 userRepository = Optional.ofNullable(userRepository)
+		                .map(repo -> { repo.deleteById(userId); return repo;})
+		                .orElseThrow(() -> new EmptyResultDataAccessException("User Not Found !!"));
+		        Optional.ofNullable(ratingService).ifPresent(service -> service.deleteRating(userId));
+		        Optional.ofNullable(hotelService).ifPresent(service -> service.deleteHotelById(userId)); 
+		 }
+			else {
+				System.out.println("One or more services are down. User record will not be deleted.");
+			} 
+		 
+		
+	}
+	
+	/**
+	 * This method is used to delete all users
+	 * @param user
+	 */
+	@Override
+	public void deleteAllUsers() {
+			Optional.ofNullable(userRepository).ifPresent(UserRepository::deleteAll);
+		    Optional.ofNullable(ratingService).ifPresent(RatingService::deleteAllRating);
+		    Optional.ofNullable(hotelService).ifPresent(HotelService::deleteAllHotel);
+	}
+
+
+	/**
+	 * This method is used to update the user by userId
+	 *  @param String userId , User updatedUser
+	 *  @return user
+	 */
+	@Override
+	public User getUserById(String userId, User updatedUser) {
+
+		User existingUser = userRepository.findById(userId).orElse(null);
+		if (existingUser != null) {
+
+			// Update existing user fields
+			existingUser.setName(updatedUser.getName());
+			existingUser.setEmail(updatedUser.getEmail());
+			existingUser.setAbout(updatedUser.getAbout());
+			existingUser.setRatings(updatedUser.getRatings());
+			return userRepository.save(existingUser);
+		} else {
+			throw new ResourceNotFoundException("User with given id is not found on server !! : " + userId);
+		}
     }
+	 
+
+	/**
+	 * This method is used to fetch the total count of user
+	 * @return total count of user
+	 */
+	public long getTotalRecords() {
+		return userRepository.count();
+	}
+
+    /**
+     * This method used to create a dummy User Details and it's will shows when service is down
+     * @return user
+     */
+    public User getUserDetails() {
+		User user = User.builder().userId("1213").name("John").email("john@email.com")
+				.about("This user is created dummy because some service is down")
+				.ratings(List.of(Rating.builder().ratingId("22131").userId("1213").hotelId("31131").rating(2)
+						.feedback("This rating is created dummy because some service is down")
+						.hotel(Hotel.builder().id("31131").name("Taj Palace").location("Mumbai")
+								.about("This hotel is created dummy beacause some service is down").build())
+						.build()))
+				.build();
+		return user;
+	}
+
+	
 }

@@ -19,12 +19,9 @@ import com.lcwd.hotel.service.HotelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @Tag(name = "Hotel", description = "Hotel Service APIs")
@@ -37,7 +34,7 @@ public class HotelController {
 	private HotelService service;
 	
 	//create
-	 @Operation(summary = "Create a new Hotel", tags = { "Hotel", "Post" })
+	 @Operation(summary = "Create a new Hotel", tags = { "Hotel","Post" })
 	    @ApiResponses({
 	    	 @ApiResponse(responseCode = "200", content = {
 	    	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
@@ -53,7 +50,7 @@ public class HotelController {
 	}
 	
 	//getSingle
-	 @Operation(summary = "get Hotel by HotelId", tags = { "Hotel", "Get" , "Filter"})
+	 @Operation(summary = "get Hotel by HotelId", tags = { "Hotel","Filter"})
 	    @ApiResponses({
 	    	 @ApiResponse(responseCode = "200", content = {
 	    	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
@@ -69,7 +66,7 @@ public class HotelController {
 	}
 	
 	//getAll
-	 @Operation(summary = "get all Hotel", tags = { "Hotel", "Get" })
+	 @Operation(summary = "get all Hotel", tags = { "Hotel","Get" })
 	    @ApiResponses({
 	    	 @ApiResponse(responseCode = "200", content = {
 	    	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),

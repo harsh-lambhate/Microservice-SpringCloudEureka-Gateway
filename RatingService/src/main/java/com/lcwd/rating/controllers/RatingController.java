@@ -1,10 +1,18 @@
 package com.lcwd.rating.controllers;
 
+
 import com.lcwd.rating.entities.Rating;
 import com.lcwd.rating.services.RatingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Tag(name = "Rating", description = "Rating Service APIs")
+@CrossOrigin(origins = "http://localhost:9081")
 @RestController
 @RequestMapping("/ratings")
 public class RatingController {
@@ -23,12 +33,30 @@ public class RatingController {
 
     //create rating
    //@PreAuthorize("hasAuthority('Admin')")
+    @Operation(summary = "Create a new rating", tags = { "Rating", "Post" })
+    @ApiResponses({
+    	 @ApiResponse(responseCode = "200", content = {
+    	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "201", content = {
+            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "500", content = {
+	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @PostMapping
     public ResponseEntity<Rating> create(@RequestBody Rating rating) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.create(rating));
     }
 
     //get all
+    @Operation(summary = "get rating by ratingId", tags = { "Rating", "Get"})
+    @ApiResponses({
+    	 @ApiResponse(responseCode = "200", content = {
+    	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "201", content = {
+            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "500", content = {
+	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @GetMapping
     public ResponseEntity<List<Rating>> getRatings() {
         return ResponseEntity.ok(ratingService.getRatings());
@@ -36,12 +64,30 @@ public class RatingController {
 
     //get all of user
     //@PreAuthorize("hasAuthority('SCOPE_internal') || hasAuthority('Admin')")
+    @Operation(summary = "get all hotel", tags = { "Rating", "Filter" })
+    @ApiResponses({
+    	 @ApiResponse(responseCode = "200", content = {
+    	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "201", content = {
+            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "500", content = {
+	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/users/{userId}")
     public ResponseEntity<List<Rating>> getRatingsByUserId(@PathVariable String userId) {
         return ResponseEntity.ok(ratingService.getRatingByUserId(userId));
     }
 
     //get all of hotels
+    @Operation(summary = "get rating by hotelId", tags = { "Rating", "Filter"})
+    @ApiResponses({
+    	 @ApiResponse(responseCode = "200", content = {
+    	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "201", content = {
+            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "500", content = {
+	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/hotels/{hotelId}")
     public ResponseEntity<List<Rating>> getRatingsByHotelId(@PathVariable String hotelId) {
         return ResponseEntity.ok(ratingService.getRatingByHotelId(hotelId));

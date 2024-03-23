@@ -1,0 +1,99 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: USER-SERVICE
+  datasource:
+    url: jdbc:mysql://localhost:3306/hotelratingservice
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+  mvc:
+    pathmatch:
+      matching-strategy: ANT_PATH_MATCHER
+       
+
+
+#  config:
+#    import: optional:configserver:http://localhost:8085
+
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          issuer-uri:  https://dev-77584981.okta.com/oauth2/default
+#      client:
+#        registration:
+#          my-internal-client:
+#            provider: okta
+#            authorization-grant-type: client_credentials
+#            scope: internal
+#            client-id: 0oa7w65a24Px9Oyms5d7
+#            client-secret: JfsTTqODW21uapbbhKjW42sGzjcNs86GN7WL5dfU
+#
+#        provider:
+#          okta:
+#            issuer-uri:  https://dev-77584981.okta.com/oauth2/default
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      ratingHotelBreaker:
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 10
+        failureRateThreshold: 50  # 50 percentage (less -> ClosedState | above ->OpenState)
+        minimumNumberOfCalls: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 6s #time to stay in openState
+        permittedNumberOfCallsInHalfOpenState: 3 #configure the number of calls when the circuit breaker is half open (for every 3rd call it will decide to change state)
+        slidingWindowSize: 10  #Record the outcome of the calls when the circuit breaker is closed
+        slidingWindowType: COUNT_BASED
+
+  retry:
+    instances:
+      ratingHotelService:
+        max-attempts: 3
+        wait-duration: 2s
+   
+
+
+#  ratelimiter:
+#    instances:
+#      userRateLimiter:
+#        limit-refresh-period: 4s
+#        limit-for-period: 2
+#        timeout-duration: 2s
+
+#okta:
+#  oauth2:
+#    issuer: https://dev-77584981.okta.com/oauth2/default
+#    audience: api://default
+
+
+springdoc:
+  packages-to-scan: com.lcwd.user.controllers
+  paths-to-match: /users/**
+#http://localhost:8081//swagger-ui/index.html#/Filter
+
+#swaggerUrl : http://localhost:8081/swagger-ui/index.html
