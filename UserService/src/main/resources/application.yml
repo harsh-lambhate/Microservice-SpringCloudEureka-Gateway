@@ -19,11 +19,11 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
-       
+#Added configuation properties
+  config:
+    import: optional:configserver:http://localhost:8085    
 
 
-#  config:
-#    import: optional:configserver:http://localhost:8085
 
 #  security:
 #    oauth2:

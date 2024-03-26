@@ -145,7 +145,7 @@ public class UserController {
 						.pageSize(pageable.getPageSize()).totalRecords(totalRecords).build();
 				userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
 				
-			} 
+			}
 			return userResponse;
 		}
 	 
