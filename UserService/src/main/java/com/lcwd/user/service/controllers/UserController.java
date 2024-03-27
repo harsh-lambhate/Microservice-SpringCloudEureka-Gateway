@@ -72,6 +72,7 @@ public class UserController {
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 	@PostMapping
 	public ResponseEntity<User> createUser(@RequestBody User user) {
+		 logger.info("creating user data--> UserController");
 		User userResponse = userService.saveUser(user);
 		return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
 	}
@@ -95,6 +96,7 @@ public class UserController {
 		@PutMapping("/{userId}")
 		@CachePut(cacheNames = "user" , key = "#userId")
 		public ResponseEntity<User> updateUserByUserId(@PathVariable String userId,@RequestBody User user) {
+			 logger.info("updating user data--> UserController");
 			User userResponse = userService.getUserById(userId,user);
 			return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
 		}
@@ -118,7 +120,7 @@ public class UserController {
 	//@Retry(name = "ratingHotelService", fallbackMethod = "ratingHotelWithSingleUserIdFallback")
 	@Cacheable(cacheNames ="user",key="#userId")
 	public ResponseEntity<User> getSingleUser(@PathVariable String userId) {
-		logger.info("Get Single User Handler: UserController");
+		logger.info("Get Single User Handler--> UserController");
 		User user = userService.getUser(userId);
 		return ResponseEntity.ok(user);
 	}
@@ -144,6 +146,7 @@ public class UserController {
 			ResponseEntity<UserApiResponse> userResponse = null;
 			long totalRecords = 0;
 			totalRecords = userServiceImpl.getTotalRecords();
+			 logger.info("Get single User Handle--> UserController totalRecords :"+totalRecords);
 
 			try {
 				Page<User> getAllUser = userService.getAllUser(pageable);
@@ -193,6 +196,7 @@ public class UserController {
 		        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 		@DeleteMapping
 		public ResponseEntity<UserApiResponse> deleteUsers() {
+			 logger.info("Deleting User data--> UserController");
 			 ResponseEntity<UserApiResponse> userResponse;
 			 try {
 				 userService.deleteAllUsers();
@@ -229,7 +233,7 @@ public class UserController {
 			@DeleteMapping("/{userId}")
 			@CacheEvict(cacheNames ="user",key="#userId")
 			public ResponseEntity<UserApiResponse> deleteUserByUserId(@PathVariable String userId) {
-				 logger.info("user deleted");
+				 logger.info("Deleting User data for single user--> UserController");
 				 ResponseEntity<UserApiResponse> userResponse;
 				 long totalRecords = 0;
 				 totalRecords = userServiceImpl.getTotalRecords();
@@ -294,5 +298,22 @@ public class UserController {
 	    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(userApiResponse);
 	}
 
-	
+
+//    public ResponseEntity<User> getSingleUser(@PathVariable String userId) {
+//        logger.info("Get Single User Handler: UserController");
+//
+//
+//        User user = userService.getUser(userId);
+//        return ResponseEntity.ok(user);
+//    }
+
+
+//    //all user get
+//    @GetMapping
+//    public ResponseEntity<List<User>> getAllUser() {
+//        List<User> allUser = userService.getAllUser();
+//        logger.info("Get All User Handler: UserController");
+//        return ResponseEntity.ok(allUser);
+//    }
+//>>>>>>> Stashed changes
 }

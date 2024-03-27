@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,8 @@ public class RatingController {
 
     @Autowired
     private RatingService ratingService;
+    
+    private Logger logger = LoggerFactory.getLogger(RatingController.class);
 
     //create rating
    //@PreAuthorize("hasAuthority('Admin')")
@@ -44,6 +48,7 @@ public class RatingController {
         @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @PostMapping
     public ResponseEntity<Rating> create(@RequestBody Rating rating) {
+    	logger.info("Creating Rating data-->RatingController");
         return ResponseEntity.status(HttpStatus.CREATED).body(ratingService.create(rating));
     }
 
@@ -59,6 +64,7 @@ public class RatingController {
         @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @GetMapping
     public ResponseEntity<List<Rating>> getRatings() {
+    	logger.info("fetching all ratings--> RatingController");
         return ResponseEntity.ok(ratingService.getRatings());
     }
 
@@ -75,6 +81,7 @@ public class RatingController {
         @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/users/{userId}")
     public ResponseEntity<List<Rating>> getRatingsByUserId(@PathVariable String userId) {
+    	logger.info("fetching rating data for specific user ---> RatingController"+userId);
         return ResponseEntity.ok(ratingService.getRatingByUserId(userId));
     }
 
@@ -90,6 +97,7 @@ public class RatingController {
         @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @GetMapping("/hotels/{hotelId}")
     public ResponseEntity<List<Rating>> getRatingsByHotelId(@PathVariable String hotelId) {
+    	logger.info("fetching hotelratings data for specific hotel ---> RatingController"+hotelId);
         return ResponseEntity.ok(ratingService.getRatingByHotelId(hotelId));
     }
 

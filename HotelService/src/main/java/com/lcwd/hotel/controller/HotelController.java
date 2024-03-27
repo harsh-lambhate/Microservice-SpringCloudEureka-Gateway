@@ -2,6 +2,8 @@ package com.lcwd.hotel.controller;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.lcwd.hotel.entities.Hotel;
 import com.lcwd.hotel.service.HotelService;
+
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,6 +36,8 @@ public class HotelController {
 	@Autowired
 	private HotelService service;
 	
+	private Logger logger = LoggerFactory.getLogger(HotelController.class);
+	
 	//create
 	 @Operation(summary = "Create a new Hotel", tags = { "Hotel","Post" })
 	    @ApiResponses({
@@ -43,8 +48,10 @@ public class HotelController {
 	        @ApiResponse(responseCode = "500", content = {
 		            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
+	 
 	@PostMapping()
 	public ResponseEntity<Hotel> createHotel(@RequestBody Hotel hotel){
+		 logger.info("Creating Hotel data-->HotelController ");
 		Hotel create = service.create(hotel);
 		return ResponseEntity.status(HttpStatus.CREATED).body(create);
 	}
@@ -61,6 +68,7 @@ public class HotelController {
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 	@GetMapping("/{hotelId}")
 	public ResponseEntity<Hotel> getHotelById(@PathVariable String hotelId){
+		 logger.info("fetch hotel data by hotelId--> HotelController"+ hotelId);
 		Hotel hotel = service.get(hotelId);
 		return ResponseEntity.status(HttpStatus.OK).body(hotel);
 	}
@@ -77,6 +85,7 @@ public class HotelController {
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 	@GetMapping()
 	public ResponseEntity<List<Hotel>> getAllHotel(){
+		 logger.info("fetching all hotel data list--> HotelController");
 		List<Hotel> hotel = service.getAll();
 		return ResponseEntity.status(HttpStatus.OK).body(hotel);
 	}

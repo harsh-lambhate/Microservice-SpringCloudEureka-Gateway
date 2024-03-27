@@ -48,6 +48,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User saveUser(User user) {
         //generate  unique userid
+    	logger.info("creating user data--> UserServiceImpl");
         String randomUserId = UUID.randomUUID().toString();
         user.setUserId(randomUserId);
         return userRepository.save(user);
@@ -60,6 +61,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Page<User> getAllUser(Pageable pageable) {
         //List<User> users = 
+    	logger.info("Fetching all users data--> UserServiceImpl");
         Page<User> users = userRepository.findAll(pageable);
         ResponseEntity<List<Rating>> ratingsResponse = ratingService.getRatings();
         ResponseEntity<List<Hotel>> hotelsResponse = hotelService.getAllHotel();
@@ -86,18 +88,19 @@ public class UserServiceImpl implements UserService {
         return users;
     }
 
-	
+
     /**
      * This method is used to get single user by userId
      * @param String userId
      * @return user
      */
-	@Override
-	public User getUser(String userId) {
-		// get user from database with the help of user repository
-		User user = userRepository.findById(userId).orElseThrow(
-				() -> new ResourceNotFoundException("User with given id is not found on server !! : " + userId));
 
+    //get single user
+    @Override
+    public User getUser(String userId) {
+        //get user from database with the help  of user repository
+    	logger.info("Fetching single users data--> UserServiceImpl");
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with given id is not found on server !! : " + userId));
 		// fetch rating of the above user from RATING SERVICE
 
 		// Rating[] ratingsOfUser =
@@ -126,7 +129,7 @@ public class UserServiceImpl implements UserService {
      */
 	@Override
 	public void deleteUserByUserId(String userId) {
-		
+		logger.info("Deleting single user's data--> UserServiceImpl");
 		 boolean allServicesAvailable = Optional.ofNullable(userRepository).isPresent()
 		            && Optional.ofNullable(hotelService).isPresent() &&
 		            	Optional.ofNullable(hotelService).isPresent();
@@ -150,6 +153,7 @@ public class UserServiceImpl implements UserService {
 	 */
 	@Override
 	public void deleteAllUsers() {
+		logger.info("Deleting users data--> UserServiceImpl");
 			Optional.ofNullable(userRepository).ifPresent(UserRepository::deleteAll);
 		   // Optional.ofNullable(ratingService).ifPresent(RatingService::deleteAllRating);
 		   // Optional.ofNullable(hotelService).ifPresent(HotelService::deleteAllHotel);
