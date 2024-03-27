@@ -134,8 +134,8 @@ public class UserServiceImpl implements UserService {
 			 userRepository = Optional.ofNullable(userRepository)
 		                .map(repo -> { repo.deleteById(userId); return repo;})
 		                .orElseThrow(() -> new EmptyResultDataAccessException("User Not Found !!"));
-		        Optional.ofNullable(ratingService).ifPresent(service -> service.deleteRating(userId));
-		        Optional.ofNullable(hotelService).ifPresent(service -> service.deleteHotelById(userId)); 
+		       // Optional.ofNullable(ratingService).ifPresent(service -> service.deleteRating(userId));
+		       // Optional.ofNullable(hotelService).ifPresent(service -> service.deleteHotelById(userId)); 
 		 }
 			else {
 				System.out.println("One or more services are down. User record will not be deleted.");
@@ -151,8 +151,8 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public void deleteAllUsers() {
 			Optional.ofNullable(userRepository).ifPresent(UserRepository::deleteAll);
-		    Optional.ofNullable(ratingService).ifPresent(RatingService::deleteAllRating);
-		    Optional.ofNullable(hotelService).ifPresent(HotelService::deleteAllHotel);
+		   // Optional.ofNullable(ratingService).ifPresent(RatingService::deleteAllRating);
+		   // Optional.ofNullable(hotelService).ifPresent(HotelService::deleteAllHotel);
 	}
 
 

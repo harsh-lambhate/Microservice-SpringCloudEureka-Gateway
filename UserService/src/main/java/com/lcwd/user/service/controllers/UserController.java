@@ -7,6 +7,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,6 +75,29 @@ public class UserController {
 		User userResponse = userService.saveUser(user);
 		return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
 	}
+	 
+	 
+	 
+	 /**
+		 *  create user 
+		 * @param user
+		 * @return ResponseEntity containing user
+		 */
+		 @Operation(summary = "update user", tags = { "User", "Put" })
+		    @ApiResponses({
+		    	 @ApiResponse(responseCode = "200", content = {
+		    	            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
+		        @ApiResponse(responseCode = "201", content = {
+		            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
+		        @ApiResponse(responseCode = "500", content = {
+			            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
+		        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
+		@PutMapping("/{userId}")
+		@CachePut(cacheNames = "user" , key = "#userId")
+		public ResponseEntity<User> updateUserByUserId(@PathVariable String userId,@RequestBody User user) {
+			User userResponse = userService.getUserById(userId,user);
+			return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
+		}
 
 	/**
 	 * single user get
@@ -89,6 +116,7 @@ public class UserController {
 	@GetMapping("/{userId}")
 	@CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "ratingHotelFallback")
 	//@Retry(name = "ratingHotelService", fallbackMethod = "ratingHotelWithSingleUserIdFallback")
+	@Cacheable(cacheNames ="user",key="#userId")
 	public ResponseEntity<User> getSingleUser(@PathVariable String userId) {
 		logger.info("Get Single User Handler: UserController");
 		User user = userService.getUser(userId);
@@ -199,7 +227,9 @@ public class UserController {
 				            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
 			        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 			@DeleteMapping("/{userId}")
+			@CacheEvict(cacheNames ="user",key="#userId")
 			public ResponseEntity<UserApiResponse> deleteUserByUserId(@PathVariable String userId) {
+				 logger.info("user deleted");
 				 ResponseEntity<UserApiResponse> userResponse;
 				 long totalRecords = 0;
 				 totalRecords = userServiceImpl.getTotalRecords();
