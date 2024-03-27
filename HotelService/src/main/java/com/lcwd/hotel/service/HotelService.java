@@ -12,4 +12,11 @@ public interface HotelService {
 	List<Hotel> getAll();
 	//get Single
     Hotel get(String id);
+    
+    //delete hotel by hotelId
+    Hotel deleteHotelByHotelId(String hotelId);
+    
+    
+    //update hotel by hotelId
+    Hotel updateHotelByHotelId(String hotelId,Hotel hotel);
 }

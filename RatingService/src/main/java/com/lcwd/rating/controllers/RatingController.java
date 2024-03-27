@@ -15,9 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -70,7 +72,7 @@ public class RatingController {
 
     //get all of user
     //@PreAuthorize("hasAuthority('SCOPE_internal') || hasAuthority('Admin')")
-    @Operation(summary = "get all hotel", tags = { "Rating", "Filter" })
+    @Operation(summary = "get all hotel", tags = { "Rating", "Get" })
     @ApiResponses({
     	 @ApiResponse(responseCode = "200", content = {
     	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
@@ -86,7 +88,7 @@ public class RatingController {
     }
 
     //get all of hotels
-    @Operation(summary = "get rating by hotelId", tags = { "Rating", "Filter"})
+    @Operation(summary = "get rating by hotelId", tags = { "Rating", "Get"})
     @ApiResponses({
     	 @ApiResponse(responseCode = "200", content = {
     	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
@@ -101,5 +103,35 @@ public class RatingController {
         return ResponseEntity.ok(ratingService.getRatingByHotelId(hotelId));
     }
 
+    //delete rating by ratingId
+    @Operation(summary = "get rating by ratingId", tags = { "Rating", "Delete"})
+    @ApiResponses({
+    	 @ApiResponse(responseCode = "200", content = {
+    	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "201", content = {
+            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "500", content = {
+	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
+    @DeleteMapping("/{ratingId}")
+	public ResponseEntity<Rating> deleteRatingById(@PathVariable String ratingId){
+		Rating rating = ratingService.deleteRatingByRatingId(ratingId);
+		return ResponseEntity.status(HttpStatus.OK).body(rating);
+	}
 
+  //update rating by ratingId
+    @Operation(summary = "get rating by ratingId", tags = { "Rating", "Put"})
+    @ApiResponses({
+    	 @ApiResponse(responseCode = "200", content = {
+    	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "201", content = {
+            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "500", content = {
+	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
+        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
+    @PutMapping("/{ratingId}")
+	public ResponseEntity<Rating> updateHotelByHotelId(@PathVariable String ratingId,@RequestBody Rating rating){
+    	Rating ratingResponse = ratingService.updateRatingByRatingId(ratingId,rating);
+		return ResponseEntity.status(HttpStatus.OK).body(ratingResponse);
+	}
 }

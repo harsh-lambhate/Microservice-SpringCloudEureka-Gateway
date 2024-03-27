@@ -2,8 +2,9 @@ package com.lcwd.user.service.controllers;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,14 +26,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import com.lcwd.user.service.entities.User;
 import com.lcwd.user.service.exceptions.ResourceNotFoundException;
 import com.lcwd.user.service.payload.UserApiResponse;
 import com.lcwd.user.service.services.UserService;
 import com.lcwd.user.service.services.impl.UserServiceImpl;
-
-import feign.FeignException;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 //import io.github.resilience4j.retry.annotation.Retry;
 import io.swagger.v3.oas.annotations.Operation;
@@ -117,13 +115,29 @@ public class UserController {
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 	@GetMapping("/{userId}")
 	@CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "ratingHotelFallback")
-	//@Retry(name = "ratingHotelService", fallbackMethod = "ratingHotelWithSingleUserIdFallback")
+	//@Retry(name = "ratingHotelService", fallbackMethod = "callingfallbackWithId")
 	@Cacheable(cacheNames ="user",key="#userId")
-	public ResponseEntity<User> getSingleUser(@PathVariable String userId) {
-		logger.info("Get Single User Handler--> UserController");
-		User user = userService.getUser(userId);
-		return ResponseEntity.ok(user);
-	}
+		public ResponseEntity<UserApiResponse> getSingleUser(@PathVariable String userId) {
+			ResponseEntity<UserApiResponse> userResponse = null;
+			try {
+				logger.info("Get Single User Handler--> UserController");
+				User user = Optional.ofNullable(userService.getUser(userId)).orElse(null);
+				UserApiResponse userApiResponse = UserApiResponse.builder()
+						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User Found SuccessFully !!")
+						.exception(null).success(true).status(HttpStatus.OK)
+						.user(user != null ? Arrays.asList(user) : Collections.emptyList()).build();
+				userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
+			}
+
+			catch (ResourceNotFoundException ex) {
+				UserApiResponse userApiResponse = UserApiResponse.builder()
+						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User not found")
+						.exception(ex.getMessage()).success(false).status(HttpStatus.NOT_FOUND).user(null).build();
+				userResponse = ResponseEntity.status(HttpStatus.NOT_FOUND).body(userApiResponse);
+
+			}
+			return userResponse;
+		}
 
 	/**
 	 * all user get
@@ -231,6 +245,7 @@ public class UserController {
 				            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
 			        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 			@DeleteMapping("/{userId}")
+			@CircuitBreaker(name="ratingHotelService",fallbackMethod = "callingfallbackWithId")
 			@CacheEvict(cacheNames ="user",key="#userId")
 			public ResponseEntity<UserApiResponse> deleteUserByUserId(@PathVariable String userId) {
 				 logger.info("Deleting User data for single user--> UserController");
@@ -272,14 +287,14 @@ public class UserController {
 	 * @param ex The exception.
 	 * @return ResponseEntity containing fallback response.
 	 */
-	public ResponseEntity<UserApiResponse> ratingHotelWithSingleUserIdFallback(String userId, Exception ex) {
+	public ResponseEntity<UserApiResponse> callingfallbackWithId(String userId, Exception ex) {
 		 logger.info("Fallback is executed because server is down", ex.getMessage());
 		    User user = userServiceImpl.getUserDetails();
 		    UserApiResponse userApiResponse = UserApiResponse.builder()
 		        .timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 		        .message("Service is not avaiable.").exception(ex.getMessage())
 		        .success(false).status(HttpStatus.SERVICE_UNAVAILABLE)
-		        .user(List.of(user)).pageNo(0).pageSize(10).totalRecords(0).build();
+		        .user(Arrays.asList(user)).pageNo(0).pageSize(10).totalRecords(0).build();
 		    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(userApiResponse);
 	}
 	/**
@@ -294,26 +309,7 @@ public class UserController {
 	        .timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 	        .message("Service is not avaiable.").exception(ex.getMessage())
 	        .success(false).status(HttpStatus.SERVICE_UNAVAILABLE)
-	        .user(List.of(user)).pageNo(0).pageSize(10).totalRecords(0).build();
+	        .user(Arrays.asList(user)).pageNo(0).pageSize(10).totalRecords(0).build();
 	    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(userApiResponse);
 	}
-
-
-//    public ResponseEntity<User> getSingleUser(@PathVariable String userId) {
-//        logger.info("Get Single User Handler: UserController");
-//
-//
-//        User user = userService.getUser(userId);
-//        return ResponseEntity.ok(user);
-//    }
-
-
-//    //all user get
-//    @GetMapping
-//    public ResponseEntity<List<User>> getAllUser() {
-//        List<User> allUser = userService.getAllUser();
-//        logger.info("Get All User Handler: UserController");
-//        return ResponseEntity.ok(allUser);
-//    }
-//>>>>>>> Stashed changes
 }

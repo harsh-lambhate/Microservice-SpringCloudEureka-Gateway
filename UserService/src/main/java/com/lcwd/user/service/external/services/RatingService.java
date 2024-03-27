@@ -19,6 +19,15 @@ public interface RatingService {
 
 	/**
 	 * GET 
+	 * This method is use to get the Rating by ratingId
+	 * 
+	 * @return ResponseEntity containing rating
+	 */
+	@GetMapping("/ratings/users/{userId}")
+	public ResponseEntity<List<Rating>> getRatingsByUserId(@PathVariable("userId") String userId);
+	
+	/**
+	 * GET 
 	 * This method is use to create the Rating
 	 * 
 	 * @return ResponseEntity containing list of rating
@@ -62,8 +71,8 @@ public interface RatingService {
 	 * 
 	 * @param ResponseEntity containing ratingId
 	 */
-	@DeleteMapping("/ratings")
-	public void deleteAllRating();
+	//@DeleteMapping("/ratings")
+	//public void deleteAllRating();
     
     
 }
