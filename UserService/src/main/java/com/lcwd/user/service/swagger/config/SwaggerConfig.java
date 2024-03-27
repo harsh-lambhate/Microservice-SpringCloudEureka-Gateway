@@ -2,6 +2,7 @@ package com.lcwd.user.service.swagger.config;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -76,7 +77,7 @@ public class SwaggerConfig {
 	        .description("Data Template Services").termsOfService("https://www.datatemplate.com/")
 	        .license(mitLicense);
 
-	    return new OpenAPI().info(info).servers(List.of(devServer, prodServer));
+	    return new OpenAPI().info(info).servers(Arrays.asList(devServer, prodServer));
 	  }
 	    
 	    /**

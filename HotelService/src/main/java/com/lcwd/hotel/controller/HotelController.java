@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -80,5 +82,39 @@ public class HotelController {
 		List<Hotel> hotel = service.getAll();
 		return ResponseEntity.status(HttpStatus.OK).body(hotel);
 	}
+	 
+	 
+	 
+	// delete employee rest api
+	 @Operation(summary = "delete hotel by hotel Id", tags = { "Hotel","Delete" })
+	    @ApiResponses({
+	    	 @ApiResponse(responseCode = "200", content = {
+	    	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
+	        @ApiResponse(responseCode = "201", content = {
+	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
+	        @ApiResponse(responseCode = "500", content = {
+		            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
+	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
+		@DeleteMapping("/{hotelId}")
+		public ResponseEntity<Hotel> deleteHotelByHotelId(@PathVariable String hotelId){
+			Hotel hotel = service.deleteHotelByHotelId(hotelId);
+			return ResponseEntity.status(HttpStatus.OK).body(hotel);
+		}
+	 
+	// update employee rest api
+	 @Operation(summary = "update hotel by hotel Id", tags = { "Hotel","Put" })
+	    @ApiResponses({
+	    	 @ApiResponse(responseCode = "200", content = {
+	    	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
+	        @ApiResponse(responseCode = "201", content = {
+	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
+	        @ApiResponse(responseCode = "500", content = {
+		            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
+	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
+	 @PutMapping("/{hotelId}")
+		public ResponseEntity<Hotel> updateHotelByHotelId(@PathVariable String hotelId,@RequestBody Hotel hotel){
+			Hotel hotelResponse = service.updateHotelByHotelId(hotelId,hotel);
+			return ResponseEntity.status(HttpStatus.OK).body(hotelResponse);
+		}
 
 }

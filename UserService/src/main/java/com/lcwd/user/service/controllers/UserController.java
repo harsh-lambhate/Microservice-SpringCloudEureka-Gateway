@@ -2,7 +2,10 @@ package com.lcwd.user.service.controllers;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,13 +118,29 @@ public class UserController {
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 	@GetMapping("/{userId}")
 	@CircuitBreaker(name = "ratingHotelBreaker", fallbackMethod = "ratingHotelFallback")
-	//@Retry(name = "ratingHotelService", fallbackMethod = "ratingHotelWithSingleUserIdFallback")
+	//@Retry(name = "ratingHotelService", fallbackMethod = "callingfallbackWithId")
 	@Cacheable(cacheNames ="user",key="#userId")
-	public ResponseEntity<User> getSingleUser(@PathVariable String userId) {
-		logger.info("Get Single User Handler: UserController");
-		User user = userService.getUser(userId);
-		return ResponseEntity.ok(user);
-	}
+		public ResponseEntity<UserApiResponse> getSingleUser(@PathVariable String userId) {
+			ResponseEntity<UserApiResponse> userResponse = null;
+			try {
+				logger.info("Get Single User Handler: UserController");
+				User user = Optional.ofNullable(userService.getUser(userId)).orElse(null);
+				UserApiResponse userApiResponse = UserApiResponse.builder()
+						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User Found SuccessFully !!")
+						.exception(null).success(true).status(HttpStatus.OK)
+						.user(user != null ? Arrays.asList(user) : Collections.emptyList()).build();
+				userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
+			}
+
+			catch (ResourceNotFoundException ex) {
+				UserApiResponse userApiResponse = UserApiResponse.builder()
+						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User not found")
+						.exception(ex.getMessage()).success(false).status(HttpStatus.NOT_FOUND).user(null).build();
+				userResponse = ResponseEntity.status(HttpStatus.NOT_FOUND).body(userApiResponse);
+
+			}
+			return userResponse;
+		}
 
 	/**
 	 * all user get
@@ -227,6 +246,7 @@ public class UserController {
 				            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
 			        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 			@DeleteMapping("/{userId}")
+			@CircuitBreaker(name="ratingHotelService",fallbackMethod = "callingfallbackWithId")
 			@CacheEvict(cacheNames ="user",key="#userId")
 			public ResponseEntity<UserApiResponse> deleteUserByUserId(@PathVariable String userId) {
 				 logger.info("user deleted");
@@ -268,7 +288,7 @@ public class UserController {
 	 * @param ex The exception.
 	 * @return ResponseEntity containing fallback response.
 	 */
-	public ResponseEntity<UserApiResponse> ratingHotelWithSingleUserIdFallback(String userId, Exception ex) {
+	public ResponseEntity<UserApiResponse> callingfallbackWithId(String userId, Exception ex) {
 		 logger.info("Fallback is executed because server is down", ex.getMessage());
 		    User user = userServiceImpl.getUserDetails();
 		    UserApiResponse userApiResponse = UserApiResponse.builder()
@@ -290,7 +310,7 @@ public class UserController {
 	        .timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 	        .message("Service is not avaiable.").exception(ex.getMessage())
 	        .success(false).status(HttpStatus.SERVICE_UNAVAILABLE)
-	        .user(List.of(user)).pageNo(0).pageSize(10).totalRecords(0).build();
+	        .user(Arrays.asList(user)).pageNo(0).pageSize(10).totalRecords(0).build();
 	    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(userApiResponse);
 	}
 

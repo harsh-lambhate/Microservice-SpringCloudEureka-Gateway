@@ -1,11 +1,13 @@
 package com.lcwd.user.service.services.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,17 +15,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
 import com.lcwd.user.service.entities.Hotel;
 import com.lcwd.user.service.entities.Rating;
 import com.lcwd.user.service.entities.User;
-import com.lcwd.user.service.exceptions.EmptyResultDataAccessException;
 import com.lcwd.user.service.exceptions.ResourceNotFoundException;
 import com.lcwd.user.service.external.services.HotelService;
 import com.lcwd.user.service.external.services.RatingService;
 import com.lcwd.user.service.repositories.UserRepository;
 import com.lcwd.user.service.services.UserService;
-
-import feign.FeignException;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -97,25 +97,19 @@ public class UserServiceImpl implements UserService {
 		// get user from database with the help of user repository
 		User user = userRepository.findById(userId).orElseThrow(
 				() -> new ResourceNotFoundException("User with given id is not found on server !! : " + userId));
-
-		// fetch rating of the above user from RATING SERVICE
-
-		// Rating[] ratingsOfUser =
-		// restTemplate.getForObject("http://RATING-SERVICE/ratings/users/"+user.getUserId(), Rating[].class);
-		// List<Rating> ratings = Arrays.stream(ratingsOfUser).toList();
-
-		List<Rating> ratings = ratingService.getRatings().getBody();
-		List<Rating> ratingList = ratings.stream().map(rating -> {
+		
+		 List<Rating> ratingList = Optional.ofNullable(ratingService.getRatingsByUserId(userId).getBody()).orElse(Collections.emptyList());		 
+		
+		  List<Rating> ratings = ratingList.stream().map(rating -> {
 			// api call to hotel service to get the hotel
 			Hotel hotel = hotelService.getHotel(rating.getHotelId()).getBody();
 			// set the hotel to rating
 			rating.setHotel(hotel);
-
 			// return the rating
 			return rating;
 		}).collect(Collectors.toList());
 
-		user.setRatings(ratingList);
+		user.setRatings(ratings);
 
 		return user;
 	}
@@ -126,23 +120,22 @@ public class UserServiceImpl implements UserService {
      */
 	@Override
 	public void deleteUserByUserId(String userId) {
-		
-		 boolean allServicesAvailable = Optional.ofNullable(userRepository).isPresent()
-		            && Optional.ofNullable(hotelService).isPresent() &&
-		            	Optional.ofNullable(hotelService).isPresent();
-		 if(allServicesAvailable) {
-			 userRepository = Optional.ofNullable(userRepository)
-		                .map(repo -> { repo.deleteById(userId); return repo;})
-		                .orElseThrow(() -> new EmptyResultDataAccessException("User Not Found !!"));
-		       // Optional.ofNullable(ratingService).ifPresent(service -> service.deleteRating(userId));
-		       // Optional.ofNullable(hotelService).ifPresent(service -> service.deleteHotelById(userId)); 
-		 }
-			else {
-				System.out.println("One or more services are down. User record will not be deleted.");
-			} 
-		 
-		
+	    User user = userRepository.findById(userId)
+	            .orElseThrow(() -> new ResourceNotFoundException("User with the given id " + userId + " is not found"));
+
+	 //  List<Rating> ratingList = ratingService.getRatingByUserId().getBody();
+	   
+	   Optional.ofNullable(ratingService.getRatingsByUserId(userId).getBody())
+	       .orElse(Collections.emptyList())
+	       .forEach(rating -> hotelService.deleteHotelById(rating.getHotelId()));
+	    
+	    Optional.ofNullable(ratingService.getRatingsByUserId(userId).getBody())
+            .orElse(Collections.emptyList())
+            .forEach(rating -> ratingService.deleteRating(rating.getRatingId()));
+	    
+	   userRepository.deleteById(userId);
 	}
+
 	
 	/**
 	 * This method is used to delete all users
@@ -150,7 +143,7 @@ public class UserServiceImpl implements UserService {
 	 */
 	@Override
 	public void deleteAllUsers() {
-			Optional.ofNullable(userRepository).ifPresent(UserRepository::deleteAll);
+			//Optional.ofNullable(userRepository).ifPresent(UserRepository::deleteAll);
 		   // Optional.ofNullable(ratingService).ifPresent(RatingService::deleteAllRating);
 		   // Optional.ofNullable(hotelService).ifPresent(HotelService::deleteAllHotel);
 	}
@@ -202,6 +195,5 @@ public class UserServiceImpl implements UserService {
 				.build();
 		return user;
 	}
-
 	
 }
