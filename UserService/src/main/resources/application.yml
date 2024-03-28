@@ -97,3 +97,18 @@ springdoc:
 #http://localhost:8081//swagger-ui/index.html#/Filter
 
 #swaggerUrl : http://localhost:8081/swagger-ui/index.html
+
+
+# Log level configuration
+logging:
+  level:
+    org:
+      springframework: INFO
+# Specify the log file location and rolling policy
+  file:
+    name: "D:/HotelRatingServiceLogs/UserService.log"
+  logback:
+    rollingpolicy:
+      file-name-pattern: "${logging.file.name}-%d{yyyy-MM-dd}.%i.log"
+      max-file-size: 10MB
+      max-history: 0

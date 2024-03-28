@@ -104,7 +104,7 @@ public class UserController {
 	 * @param userId
 	 * @return ResponseEntity containing user
 	 */
-	 @Operation(summary = "get all user by userId", tags = { "User", "Filter" })
+	 @Operation(summary = "get all user by userId", tags = { "User", "Get" })
 	    @ApiResponses({
 	    	 @ApiResponse(responseCode = "200", content = {
 	    	            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
@@ -235,7 +235,7 @@ public class UserController {
 			 * @param user
 			 * @return ResponseEntity containing user
 			 */
-			 @Operation(summary = "delete user", tags = { "User", "Delete", "Filter" })
+			 @Operation(summary = "delete user", tags = { "User", "Delete" })
 			    @ApiResponses({
 			    	 @ApiResponse(responseCode = "200", content = {
 			    	            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),

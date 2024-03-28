@@ -59,7 +59,7 @@ public class HotelController {
 	}
 	
 	//getSingle
-	 @Operation(summary = "get Hotel by HotelId", tags = { "Hotel","Filter"})
+	 @Operation(summary = "get Hotel by HotelId", tags = { "Hotel","Get"})
 	    @ApiResponses({
 	    	 @ApiResponse(responseCode = "200", content = {
 	    	            @Content(schema = @Schema(implementation = Hotel.class), mediaType = "application/json") }),
