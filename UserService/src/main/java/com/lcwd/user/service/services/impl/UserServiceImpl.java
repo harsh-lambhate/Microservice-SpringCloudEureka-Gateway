@@ -1,5 +1,6 @@
 package com.lcwd.user.service.services.impl;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -8,12 +9,16 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.lcwd.user.service.entities.Hotel;
 import com.lcwd.user.service.entities.Rating;
@@ -38,8 +43,27 @@ public class UserServiceImpl implements UserService {
     
     @Autowired
     private RatingService ratingService;
+    
+    @Autowired
+	private CacheManager cacheManager;
 
     private Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+    
+    
+	@PostConstruct
+	public void preloadCache() {
+		Cache cache = cacheManager.getCache("user");
+		LocalDateTime currentDateTime = LocalDateTime.now();
+		logger.info("****** Initializing Cache ****** :"+currentDateTime);
+	}
+
+	@Scheduled(fixedRate = 60000, initialDelay = 15000)
+	public void clearCache() {
+		LocalDateTime currentDateTime = LocalDateTime.now();
+		logger.info("****** Clearing the Cache ****** :"+currentDateTime);
+		cacheManager.getCacheNames().parallelStream().forEach(name -> cacheManager.getCache(name).clear());
+	}
+	
 
     /**
      * This method is used to save userId which is created by Random Number UUID 
@@ -170,6 +194,18 @@ public class UserServiceImpl implements UserService {
 			existingUser.setEmail(updatedUser.getEmail());
 			existingUser.setAbout(updatedUser.getAbout());
 			existingUser.setRatings(updatedUser.getRatings());
+			
+			List<Rating> ratingList = Optional.ofNullable(ratingService.getRatingsByUserId(userId).getBody())
+					.orElse(Collections.emptyList());
+
+			ratingList.stream().filter(rating -> rating.getUserId().equalsIgnoreCase(userId))
+					.forEach(rating -> Optional.ofNullable(rating.getHotel())
+							.ifPresent(hotel -> hotelService.updateHotelByHotelId(rating.getHotelId(), hotel)));
+
+			ratingList.stream().filter(rating -> rating.getUserId().equalsIgnoreCase(userId))
+					.forEach(ratingDetail -> Optional.ofNullable(ratingDetail)
+							.ifPresent(rating -> ratingService.updateRatingByRatingId(rating.getRatingId(), rating)));
+			 
 			return userRepository.save(existingUser);
 		} else {
 			throw new ResourceNotFoundException("User with given id is not found on server !! : " + userId);

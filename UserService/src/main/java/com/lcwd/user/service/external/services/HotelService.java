@@ -1,13 +1,13 @@
 package com.lcwd.user.service.external.services;
 
 import java.util.List;
-
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-
+import org.springframework.web.bind.annotation.PutMapping;
 import com.lcwd.user.service.entities.Hotel;
 
 
@@ -41,6 +41,19 @@ public interface HotelService {
 	 */
     @DeleteMapping("/hotels")
     public void deleteAllHotel();
+    
+    
+    /**
+	 * PUT 
+	 * This method is use to update the Hotel using hotelId
+	 * 
+	 * @param ratingId
+	 * @param rating
+	 * @return ResponseEntity containing rating
+	 */
+	@PutMapping("/hotels/{hotelId}")
+	@Transactional
+	public ResponseEntity<Hotel> updateHotelByHotelId(@PathVariable("hotelId") String hotelId, Hotel hotel);
 
    
 }
