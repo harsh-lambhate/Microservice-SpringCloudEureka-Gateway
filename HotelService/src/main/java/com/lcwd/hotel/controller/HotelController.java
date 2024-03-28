@@ -122,7 +122,7 @@ public class HotelController {
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 	 @PutMapping("/{hotelId}")
 		public ResponseEntity<Hotel> updateHotelByHotelId(@PathVariable String hotelId,@RequestBody Hotel hotel){
-			Hotel hotelResponse = service.updateHotelByHotelId(hotelId,hotel);
+			Hotel hotelResponse = service.updateHotelById(hotelId,hotel);
 			return ResponseEntity.status(HttpStatus.OK).body(hotelResponse);
 		}
 

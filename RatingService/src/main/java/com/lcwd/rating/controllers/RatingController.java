@@ -130,8 +130,8 @@ public class RatingController {
 	            @Content(schema = @Schema(implementation = Rating.class), mediaType = "application/json") }),
         @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
     @PutMapping("/{ratingId}")
-	public ResponseEntity<Rating> updateHotelByHotelId(@PathVariable String ratingId,@RequestBody Rating rating){
-    	Rating ratingResponse = ratingService.updateRatingByRatingId(ratingId,rating);
+	public ResponseEntity<Rating> updateRatingByRatingId(@PathVariable String ratingId,@RequestBody Rating rating){
+    	Rating ratingResponse = ratingService.updateRatingById(ratingId,rating);
 		return ResponseEntity.status(HttpStatus.OK).body(ratingResponse);
 	}
 }

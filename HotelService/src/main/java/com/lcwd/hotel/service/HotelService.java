@@ -18,5 +18,5 @@ public interface HotelService {
     
     
     //update hotel by hotelId
-    Hotel updateHotelByHotelId(String hotelId,Hotel hotel);
+    Hotel updateHotelById(String hotelId,Hotel hotel);
 }

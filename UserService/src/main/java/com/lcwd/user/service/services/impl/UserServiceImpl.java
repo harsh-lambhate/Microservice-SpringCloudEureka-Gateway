@@ -13,7 +13,6 @@ import javax.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,27 +31,27 @@ import com.lcwd.user.service.services.UserService;
 @Service
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserRepository userRepository;
+	@Autowired
+	private UserRepository userRepository;
 
 //    @Autowired
 //    private RestTemplate restTemplate;
 
-    @Autowired
-    private HotelService hotelService;
-    
-    @Autowired
-    private RatingService ratingService;
-    
-    @Autowired
+	@Autowired
+	private HotelService hotelService;
+
+	@Autowired
+	private RatingService ratingService;
+
+	@Autowired
 	private CacheManager cacheManager;
 
-    private Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
+	private Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
     
     
 	@PostConstruct
 	public void preloadCache() {
-		Cache cache = cacheManager.getCache("user");
+		cacheManager.getCache("user");
 		LocalDateTime currentDateTime = LocalDateTime.now();
 		logger.info("****** Initializing Cache ****** :"+currentDateTime);
 	}
@@ -67,10 +66,11 @@ public class UserServiceImpl implements UserService {
 
     /**
      * This method is used to save userId which is created by Random Number UUID 
+     * * @return user
      */
     @Override
     public User saveUser(User user) {
-        //generate  unique userid
+        //generate  unique userId
     	logger.info("creating user data--> UserServiceImpl");
         String randomUserId = UUID.randomUUID().toString();
         user.setUserId(randomUserId);
@@ -119,7 +119,7 @@ public class UserServiceImpl implements UserService {
      */
     //get single user
 	@Override
-	public User getUser(String userId) {
+	public User getUserById(String userId) {
 		// get user from database with the help of user repository
 		logger.info("Fetching single users data--> UserServiceImpl");
 		User user = userRepository.findById(userId).orElseThrow(
@@ -150,9 +150,7 @@ public class UserServiceImpl implements UserService {
 		logger.info("Deleting single user's data--> UserServiceImpl");
 	    userRepository.findById(userId)
 	            .orElseThrow(() -> new ResourceNotFoundException("User with the given id " + userId + " is not found"));
-
-	 //  List<Rating> ratingList = ratingService.getRatingByUserId().getBody();
-	   
+	  //Data has updated in databases for both rating and hotel tables 
 	   Optional.ofNullable(ratingService.getRatingsByUserId(userId).getBody())
 	       .orElse(Collections.emptyList())
 	       .forEach(rating -> hotelService.deleteHotelById(rating.getHotelId()));
@@ -173,8 +171,6 @@ public class UserServiceImpl implements UserService {
 	public void deleteAllUsers() {
 			logger.info("Deleting users data--> UserServiceImpl");
 			//Optional.ofNullable(userRepository).ifPresent(UserRepository::deleteAll);
-		   // Optional.ofNullable(ratingService).ifPresent(RatingService::deleteAllRating);
-		   // Optional.ofNullable(hotelService).ifPresent(HotelService::deleteAllHotel);
 	}
 
 
@@ -184,8 +180,8 @@ public class UserServiceImpl implements UserService {
 	 *  @return user
 	 */
 	@Override
-	public User getUserById(String userId, User updatedUser) {
-
+	public User updateUserById(String userId, User updatedUser) {
+		logger.info("update users data by userId--> UserServiceImpl");
 		User existingUser = userRepository.findById(userId).orElse(null);
 		if (existingUser != null) {
 
@@ -193,19 +189,12 @@ public class UserServiceImpl implements UserService {
 			existingUser.setName(updatedUser.getName());
 			existingUser.setEmail(updatedUser.getEmail());
 			existingUser.setAbout(updatedUser.getAbout());
-			existingUser.setRatings(updatedUser.getRatings());
 			
-			List<Rating> ratingList = Optional.ofNullable(ratingService.getRatingsByUserId(userId).getBody())
-					.orElse(Collections.emptyList());
-
-			ratingList.stream().filter(rating -> rating.getUserId().equalsIgnoreCase(userId))
-					.forEach(rating -> Optional.ofNullable(rating.getHotel())
-							.ifPresent(hotel -> hotelService.updateHotelByHotelId(rating.getHotelId(), hotel)));
-
-			ratingList.stream().filter(rating -> rating.getUserId().equalsIgnoreCase(userId))
-					.forEach(ratingDetail -> Optional.ofNullable(ratingDetail)
-							.ifPresent(rating -> ratingService.updateRatingByRatingId(rating.getRatingId(), rating)));
-			 
+			List<Rating> ratings = Optional.ofNullable(updatedUser.getRatings()).orElse(Collections.emptyList());
+			//Data has updated in databases for both rating and hotel tables 
+			ratings.stream().forEach(rating->hotelService.updateHotelByHotelId(rating.getHotelId(), rating.getHotel()));
+			ratings.stream().forEach(rating->ratingService.updateRatingByRatingId(rating.getRatingId(), rating));
+			existingUser.setRatings(updatedUser.getRatings());
 			return userRepository.save(existingUser);
 		} else {
 			throw new ResourceNotFoundException("User with given id is not found on server !! : " + userId);

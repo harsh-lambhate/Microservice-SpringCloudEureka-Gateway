@@ -25,8 +25,8 @@ public interface RatingService {
     Rating deleteRatingByRatingId(String hotelId);
     
     
-    //update rating by rating
-    Rating updateRatingByRatingId(String hotelId,Rating hotel);
+    //update rating by ratingId
+    Rating updateRatingById(String ratingId,Rating rating);
 
 
 }

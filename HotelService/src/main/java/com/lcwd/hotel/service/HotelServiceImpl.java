@@ -54,7 +54,7 @@ public class HotelServiceImpl implements HotelService{
 
 	
 	@Override
-	public Hotel updateHotelByHotelId(String hotelId, Hotel hotel) {
+	public Hotel updateHotelById(String hotelId, Hotel hotel) {
 	    Hotel hotelDetail = repository.findById(hotelId).orElseThrow(() -> new ResourceNotFoundException("Hotel with given id " + hotelId + " is not found"));
 	    Optional.ofNullable(hotel.getId()).ifPresent(hotelDetail::setId);
 	    Optional.ofNullable(hotel.getName()).ifPresent(hotelDetail::setName);

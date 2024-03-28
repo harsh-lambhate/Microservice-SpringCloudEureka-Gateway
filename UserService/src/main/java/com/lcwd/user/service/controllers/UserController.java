@@ -69,16 +69,32 @@ public class UserController {
 		            @Content(schema = @Schema(implementation = User.class), mediaType = "application/json") }),
 	        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 	@PostMapping
-	public ResponseEntity<User> createUser(@RequestBody User user) {
+	public ResponseEntity<UserApiResponse> createUser(@RequestBody User user) {
+		ResponseEntity<UserApiResponse> userResponse = null;
 		 logger.info("creating user data--> UserController");
-		User userResponse = userService.saveUser(user);
-		return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
+		try {
+			//Call saveUser method from userService  to save user data
+			User updatedUser = Optional.ofNullable(userService.saveUser(user)).orElse(null);
+			UserApiResponse userApiResponse = UserApiResponse.builder()
+					.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User Updated SuccessFully !!")
+					.exception(null).success(true)
+					.user(updatedUser != null ? Arrays.asList(updatedUser) : Collections.emptyList()).build();
+			userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
+		}
+		catch (Exception ex) {
+			UserApiResponse userApiResponse = UserApiResponse.builder()
+					.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User not created")
+					.exception(ex.getMessage()).success(false).user(null).build();
+			userResponse = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(userApiResponse);
+
+		}
+		return userResponse;
 	}
 	 
 	 
 	 
 	 /**
-		 *  create user 
+		 *  update user by userId
 		 * @param user
 		 * @return ResponseEntity containing user
 		 */
@@ -93,14 +109,32 @@ public class UserController {
 		        @ApiResponse(responseCode = "403", content = { @Content(schema = @Schema()) }) })
 		@PutMapping("/{userId}")
 		@CachePut(cacheNames = "user" , key = "#userId")
-		public ResponseEntity<User> updateUserByUserId(@PathVariable String userId,@RequestBody User user) {
+		public ResponseEntity<UserApiResponse> updateUserByUserId(@PathVariable String userId,@RequestBody User user) {
+			 ResponseEntity<UserApiResponse> userResponse = null;
+			 long totalRecords = 0;
+			 totalRecords = userServiceImpl.getTotalRecords();
 			 logger.info("updating user data--> UserController");
-			User userResponse = userService.getUserById(userId,user);
-			return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
+			try {
+			    //Call updateUserById method from userService  to get updateUser data
+				User updatedUser = Optional.ofNullable(userService.updateUserById(userId,user)).orElse(null);
+				UserApiResponse userApiResponse = UserApiResponse.builder()
+						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User Updated SuccessFully !!")
+						.exception(null).success(true)
+						.user(updatedUser != null ? Arrays.asList(updatedUser) : Collections.emptyList()).totalRecords(totalRecords).build();
+				userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
+			}
+			catch (ResourceNotFoundException ex) {
+				UserApiResponse userApiResponse = UserApiResponse.builder()
+						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User Not found")
+						.exception(ex.getMessage()).success(false).user(null).totalRecords(totalRecords).build();
+				userResponse = ResponseEntity.status(HttpStatus.NOT_FOUND).body(userApiResponse);
+
+			}
+			return userResponse;
 		}
 
 	/**
-	 * single user get
+	 *  get user by userId
 	 * @param userId
 	 * @return ResponseEntity containing user
 	 */
@@ -119,20 +153,22 @@ public class UserController {
 	@Cacheable(cacheNames ="user",key="#userId")
 		public ResponseEntity<UserApiResponse> getSingleUser(@PathVariable String userId) {
 			ResponseEntity<UserApiResponse> userResponse = null;
+			logger.info("Get Single User Handler--> UserController");
 			try {
-				logger.info("Get Single User Handler--> UserController");
-				User user = Optional.ofNullable(userService.getUser(userId)).orElse(null);
+				
+				//Call getUser method from userService  to get single user data
+				User user = Optional.ofNullable(userService.getUserById(userId)).orElse(null);
 				UserApiResponse userApiResponse = UserApiResponse.builder()
 						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User Found SuccessFully !!")
-						.exception(null).success(true).status(HttpStatus.OK)
+						.exception(null).success(true)
 						.user(user != null ? Arrays.asList(user) : Collections.emptyList()).build();
 				userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
 			}
 
 			catch (ResourceNotFoundException ex) {
 				UserApiResponse userApiResponse = UserApiResponse.builder()
-						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User not found")
-						.exception(ex.getMessage()).success(false).status(HttpStatus.NOT_FOUND).user(null).build();
+						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES)).message("User Not found")
+						.exception(ex.getMessage()).success(false).user(null).build();
 				userResponse = ResponseEntity.status(HttpStatus.NOT_FOUND).body(userApiResponse);
 
 			}
@@ -140,7 +176,7 @@ public class UserController {
 		}
 
 	/**
-	 * all user get
+	 * get all user
 	 * @return ResponseEntity containing allUser
 	 */
 	 @Operation(summary = "get all users", tags = { "User", "Get" })
@@ -163,12 +199,13 @@ public class UserController {
 			 logger.info("Get single User Handle--> UserController totalRecords :"+totalRecords);
 
 			try {
+				//Call getAllUser method from userService  to get all user data
 				Page<User> getAllUser = userService.getAllUser(pageable);
 				if (getAllUser.hasContent()) {
 					UserApiResponse userApiResponse = UserApiResponse.builder()
 							.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 							.message("User fetch SuccessFully !!").exception(null)
-							.success(true).status(HttpStatus.OK).user(getAllUser.getContent())
+							.success(true).user(getAllUser.getContent())
 							.pageNo(pageable.getPageNumber()).pageSize(pageable.getPageSize())	
 							.totalRecords(totalRecords).build();
 					userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
@@ -176,7 +213,7 @@ public class UserController {
 				else {
 					UserApiResponse userApiResponse = UserApiResponse.builder()
 							.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
-							.message("No records found !!").success(false).status(HttpStatus.NOT_FOUND)
+							.message("No records found !!").success(false)
 							.user(null).pageNo(pageable.getPageNumber())
 							.pageSize(pageable.getPageSize()).totalRecords(totalRecords).build();
 					userResponse = ResponseEntity.status(HttpStatus.NOT_FOUND).body(userApiResponse);
@@ -185,8 +222,8 @@ public class UserController {
 			catch (ResourceNotFoundException ex) {
 				UserApiResponse userApiResponse = UserApiResponse.builder()
 						.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
-						.message("User not found").exception(ex.getMessage())
-						.success(false).status(HttpStatus.OK).user(null).pageNo(pageable.getPageNumber())
+						.message("User Not found").exception(ex.getMessage())
+						.success(false).user(null).pageNo(pageable.getPageNumber())
 						.pageSize(pageable.getPageSize()).totalRecords(totalRecords).build();
 				userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);
 				
@@ -195,7 +232,7 @@ public class UserController {
 		}
 	 
 	 /**
-		 *  delete user 
+		 * delete user 
 		 * @param user
 		 * @return ResponseEntity containing user
 		 */
@@ -213,25 +250,26 @@ public class UserController {
 			 logger.info("Deleting User data--> UserController");
 			 ResponseEntity<UserApiResponse> userResponse;
 			 try {
+				//Call deleteAllUsers method from userService  to delete user data
 				 userService.deleteAllUsers();
 					userResponse = ResponseEntity.status(HttpStatus.OK)
 							.body(UserApiResponse.builder()
 									.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 									.message("User Deleted SuccessFully !!").success(true)
-									.status(HttpStatus.OK).user(null).build());
+									.user(null).build());
 			} catch (Exception ex) {
 				 userResponse = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 							.body(UserApiResponse.builder()
 									.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 									.message("An error occurred while deleting users.")
 									.exception(ex.getMessage()).success(false)
-									.status(HttpStatus.INTERNAL_SERVER_ERROR).user(null).build());
+									.user(null).build());
 			}	 
 				 return userResponse;
 			}		 
 	
 		  /**
-			 *  delete user by userId
+			 * delete user by userId
 			 * @param user
 			 * @return ResponseEntity containing user
 			 */
@@ -253,19 +291,20 @@ public class UserController {
 				 long totalRecords = 0;
 				 totalRecords = userServiceImpl.getTotalRecords();
 				 try {
+					//Call deleteUserByUserId method from userService  to delete single user data
 					 userService.deleteUserByUserId(userId);
 						userResponse = ResponseEntity.status(HttpStatus.OK)
 								.body(UserApiResponse.builder()
 										.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 										.totalRecords(totalRecords)
 										.message("User Deleted SuccessFully by userId : "+ userId).success(true)
-										.status(HttpStatus.OK).user(null).build());
+										.user(null).build());
 				}
 				 catch (EmptyResultDataAccessException ex) {
 						UserApiResponse userApiResponse = UserApiResponse.builder()
 								.timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
-								.message("User not found").exception(ex.getMessage())
-								.success(false).status(HttpStatus.OK).user(null)
+								.message("User Not found").exception(ex.getMessage())
+								.success(false).user(null)
 								.totalRecords(totalRecords).build();
 						userResponse = ResponseEntity.status(HttpStatus.OK).body(userApiResponse);	
 					}
@@ -276,11 +315,13 @@ public class UserController {
 										.message("An error occurred while deleting user")
 										.totalRecords(totalRecords)
 										.exception(ex.getMessage()).success(false)
-										.status(HttpStatus.INTERNAL_SERVER_ERROR).user(null).build());
+										.user(null).build());
 				}	 
 					 return userResponse;
 				}	
 
+			 
+			 
 	/**
 	 * Fallback method for handling exceptions in ratingHotel service call.
 	 * @param userId The user ID.
@@ -293,8 +334,7 @@ public class UserController {
 		    UserApiResponse userApiResponse = UserApiResponse.builder()
 		        .timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 		        .message("Service is not avaiable.").exception(ex.getMessage())
-		        .success(false).status(HttpStatus.SERVICE_UNAVAILABLE)
-		        .user(Arrays.asList(user)).pageNo(0).pageSize(10).totalRecords(0).build();
+		        .success(false).user(Arrays.asList(user)).pageNo(0).pageSize(10).totalRecords(0).build();
 		    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(userApiResponse);
 	}
 	/**
@@ -308,8 +348,7 @@ public class UserController {
 	    UserApiResponse userApiResponse = UserApiResponse.builder()
 	        .timestamp(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
 	        .message("Service is not avaiable.").exception(ex.getMessage())
-	        .success(false).status(HttpStatus.SERVICE_UNAVAILABLE)
-	        .user(Arrays.asList(user)).pageNo(0).pageSize(10).totalRecords(0).build();
+	        .success(false).user(Arrays.asList(user)).pageNo(0).pageSize(10).totalRecords(0).build();
 	    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(userApiResponse);
 	}
 }

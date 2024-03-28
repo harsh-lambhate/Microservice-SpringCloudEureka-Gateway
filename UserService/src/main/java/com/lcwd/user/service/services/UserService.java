@@ -30,7 +30,7 @@ public interface UserService {
 	 * @param userId
 	 * @return User
 	 */
-	User getUser(String userId);
+	User getUserById(String userId);
 
 	/**
 	 * To delete user by userId
@@ -47,6 +47,6 @@ public interface UserService {
 	 * To update the user by userId
 	 * @return User
 	 */
-	User getUserById(String userId, User user);
+	User updateUserById(String userId, User user);
 
 }

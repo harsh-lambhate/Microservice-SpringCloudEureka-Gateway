@@ -59,7 +59,7 @@ public class RatingServiceImpl implements RatingService {
 	}
 
 	@Override
-	public Rating updateRatingByRatingId(String ratingId, Rating rating) {
+	public Rating updateRatingById(String ratingId, Rating rating) {
 	    Rating ratingDetail = repository.findById(ratingId).orElseThrow(() -> new ResourceNotFoundException("Rating with given id " + ratingId + " is not found"));
 
 	    Optional.ofNullable(rating.getRatingId()).ifPresent(ratingDetail::setRatingId);
